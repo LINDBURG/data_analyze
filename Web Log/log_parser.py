@@ -58,17 +58,17 @@ class OutputClass:
 
     def sendRequest(self, url):
         if self.mode == 1:
-            requests.get(self.path + url)
+            requests.get(url)
         elif self.mode == 2:
-            requests.post(self.path + url, data = {})
+            requests.post(url, data = {})
         elif self.mode == 3:
-            requests.put(self.path + url)
+            requests.put(url)
         elif self.mode == 4:
-            requests.head(self.path + url)
+            requests.head(url)
         elif self.mode == 5:
-            requests.delete(self.path + url)
+            requests.delete(url)
         elif self.mode == 6:
-            requests.options(self.path + url)
+            requests.options(url)
 
     def ParseURL(self, fname, line):
         if 'access' in fname:
@@ -101,9 +101,13 @@ class OutputClass:
             else:
                 return ''
 
-            url_index = line[index:].find(' ')
+            url_end = line[index:].find(' ')
+            url = line[index:index + url_end]
 
-            return line[index:index + url_index]
+            if url[0] == '/' or url[0] == '\\':
+                return self.path + url
+            else:
+                return url
                 
             
         except:
