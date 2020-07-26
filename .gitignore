@@ -1,5 +1,7 @@
-/.ipynb_checkpoints
-/data
-/secdata
-/Web Log
+.ipynb_checkpoints
+data
+secdata
 (20년도*
+!Web Log/
+Web Log/*
+!Web log/*.py
