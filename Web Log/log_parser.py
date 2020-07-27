@@ -127,10 +127,15 @@ class OutputClass:
             url_end = line[index:].find(' ')
             url = line[index:index + url_end]
 
-            if url[0] == '/' or url[0] == '\\':
+            if url[0] == '/':
                 return self.path + url
-            else:
+            elif url[:4] == 'http':
+                #외부 사이트 접속 주소
                 return url
+                #외부 사이트 주소 무시
+                #return ''
+            else:
+                return ''
                 
             
         except:
