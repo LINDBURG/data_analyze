@@ -16,11 +16,16 @@ class OutputClass:
         fileNames = os.listdir(inputDir)
         self.server = inputDir[inputDir.rfind('/')+1:]
 
+        if not os.path.exists(outputDir):
+            os.makedirs(outputDir)
+        with open(outputDir + 'error.txt', 'w') as fw:
+            fw.write(str(datetime.datetime.now()) +'\n')
+
         no = 0
         sizFileNames = len(fileNames)
         for fileName in fileNames:
             no += 1
-            print('[{0:03d}/{1}]\t'.format(no, sizFileNames) + fileName + ': Start...', end='')
+            print('[{0:03d}/{1}]\t'.format(no, sizFileNames) + fileName + ': Start...')
 
             with open(fileName, 'rt', encoding='UTF8') as fr:
                 i = 0
@@ -32,10 +37,15 @@ class OutputClass:
                 self.delete = []
                 self.options = []
 
-                for line in fr:
-                    urlData = self.ParseURL(fileName, line)
-                    if urlData != '':
-                        self.sendRequest(urlData)
+                try:
+                    for line in fr:
+                        urlData = self.ParseURL(fileName, line)
+                        if urlData != '':
+                            #추출 후 바로 리퀘스트 전송
+                            self.sendRequest(urlData)
+                except:
+                    with open(outputDir + 'error.txt', 'a') as fw:
+                        fw.write('Request_error: ' + fileName + '\n' + line + '\n')
 
                     '''if urlData != '':
                         if i > 0:
@@ -55,6 +65,19 @@ class OutputClass:
                     print('Done')
                     jsonOutput = []'''
 
+    def saveRequest(self, url):
+        if self.mode == 1:
+            self.get.append(url)
+        elif self.mode == 2:
+            requests.post(url)
+        elif self.mode == 3:
+            requests.put(url)
+        elif self.mode == 4:
+            requests.head(url)
+        elif self.mode == 5:
+            requests.delete(url)
+        elif self.mode == 6:
+            requests.options(url)
 
     def sendRequest(self, url):
         if self.mode == 1:
@@ -111,14 +134,14 @@ class OutputClass:
                 
             
         except:
-            print('Error\n# Access Log: ' + line)
-            exit()
+            with open(outputDir + 'error.txt', 'a') as fw:
+                fw.write('Parse_error: ' + fileName + '\n' + line + '\n')
 
 
 if __name__ == "__main__":
     dirData = os.path.dirname(os.path.abspath(__file__)) + '/weblog'
     dirOutput = os.path.dirname(os.path.abspath(__file__)) + '/parse/'
-    #패킷 리플레이를 원하는 주소를 입력
+    #패킷 리플레이를 원하는 주소를 입력(http 포함)
     baseURL = "http://127.0.0.1:5000"
 
     output = OutputClass(baseURL)
