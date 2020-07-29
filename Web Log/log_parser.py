@@ -7,20 +7,24 @@ import numpy as np
 
 class OutputClass:
 
-    def __init__(self, path):
+    def __init__(self):
         self.mode = 0
-        self.path = path
 
 
-    def ReadData(self, inputDir, outputDir):
+    def ReadData(self, inputDir, outputDir, errorDir):
         os.chdir(inputDir)
         fileNames = os.listdir(inputDir)
         self.server = inputDir[inputDir.rfind('/')+1:]
 
         if not os.path.exists(outputDir):
             os.makedirs(outputDir)
-        with open(outputDir + 'error.txt', 'w') as fw:
-            fw.write(str(datetime.datetime.now()) +'\n')
+        if not os.path.exists(errorDir):
+            os.makedirs(errorDir)
+        
+        dt = datetime.datetime.now()
+        self.errorFile = errorDir + 'error_parser_' + dt.strftime("%m%d_%H%M") + '.txt'
+        f = open(self.errorFile, 'w')
+        f.close()
 
         no = 0
         sizFileNames = len(fileNames)
@@ -42,33 +46,14 @@ class OutputClass:
                     for line in fr:
                         urlData = self.ParseURL(fileName, line)
                         if urlData != '':
-                            #추출 후 바로 리퀘스트 전송
-                            #self.sendRequest(urlData)
-                            #배열에 추가하여 추후 저장
+                            #배열에 저장하여 sender에서 사용
                             self.saveRequest(urlData)
                 except:
-                    with open(outputDir + 'error.txt', 'a') as fw:
-                        fw.write('Request_error: ' + fileName + '\n' + line + '\n')
+                    with open(self.errorFile, 'a') as fw:
+                        fw.write(fileName + '\n' + line + '\n')
 
-                    '''if urlData != '':
-                        if i > 0:
-                            jsonOutput.append(self.jsonDataTemp)
-                        i += 1
-                        self.jsonDataTemp = jsonData
-                
-                    if i%3000000 == 0:
-                        with open(outputDir + fileName + '_' + str(j) + '.json', 'wt') as fw:
-                            fw.write(json.dumps(jsonOutput, indent=2))
-                            print('Done', end='')
-                            jsonOutput = []
-                            j += 1
-
-                with open(outputDir + fileName + '.json', 'wt') as fw:
-                    fw.write(json.dumps(jsonOutput, indent=2))
-                    print('Done')
-                    jsonOutput = []'''
-                
-            np.savez(outputDir + fileName, get=self.get, post=self.post, put=self.put, head=self.head, delete=self.delete, options=self.options)
+            if 'access' in fileName:
+                np.savez(outputDir + fileName, get=self.get, post=self.post, put=self.put, head=self.head, delete=self.delete, options=self.options)
 
     def saveRequest(self, url):
         if self.mode == 1:
@@ -84,26 +69,10 @@ class OutputClass:
         elif self.mode == 6:
             self.options.append(url)
 
-    def sendRequest(self, url):
-        if self.mode == 1:
-            requests.get(url)
-        elif self.mode == 2:
-            requests.post(url, data = {})
-        elif self.mode == 3:
-            requests.put(url)
-        elif self.mode == 4:
-            requests.head(url)
-        elif self.mode == 5:
-            requests.delete(url)
-        elif self.mode == 6:
-            requests.options(url)
-
     def ParseURL(self, fname, line):
-        #if 'access' in fname:
-            #return self.AccessLogParser(line, fname)
-        if 'error' in fname:
-            return self.ErrorLogParser(line, fname)
-    
+        if 'access' in fname:
+            return self.AccessLogParser(line, fname)
+        
     def AccessLogParser(self, line, fname):
         try:
             index = line.find('"') + 1
@@ -135,26 +104,26 @@ class OutputClass:
             url = line[index:index + url_end]
 
             if url[0] == '/':
-                return self.path + url
+                return url
             elif url[:4] == 'http':
                 #외부 사이트 접속 주소
-                return url
+                #return url
                 #외부 사이트 주소 무시
-                #return ''
+                return ''
             else:
                 return ''
                 
             
         except:
-            with open(outputDir + 'error.txt', 'a') as fw:
-                fw.write('Parse_error: ' + fileName + '\n' + line + '\n')
+            with open(self.errorFile, 'a') as fw:
+                fw.write(fileName + '\n' + line + '\n')
+
 
 
 if __name__ == "__main__":
     dirData = os.path.dirname(os.path.abspath(__file__)) + '/weblog'
     dirOutput = os.path.dirname(os.path.abspath(__file__)) + '/parse/'
-    #패킷 리플레이를 원하는 주소를 입력(http 포함)
-    baseURL = "http://127.0.0.1:5000"
+    errorOut = os.path.dirname(os.path.abspath(__file__)) + '/error/'
 
-    output = OutputClass(baseURL)
-    output.ReadData(dirData, dirOutput)
+    output = OutputClass()
+    output.ReadData(dirData, dirOutput, errorOut)
